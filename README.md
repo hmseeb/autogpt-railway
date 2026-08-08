@@ -42,6 +42,40 @@ The subscription route is for a personal instance. A Claude consumer subscriptio
 
 **Agent blocks** are the opposite: each user adds their own provider keys inside the app under Settings, and those only feed the blocks wired up in the builder.
 
+## Connecting integrations (Reddit, GitHub, Google, ...)
+
+Settings, Integrations, Connect Service works for some providers immediately and fails for others with:
+
+> Integration with provider 'x' is not configured. Set client ID and secret in the application's deployment environment
+
+That message is correct but tells you neither the variable names nor the callback URL. Both are below.
+
+There are two kinds of integration and only one needs you to do anything:
+
+**Key-based** (most of them): each user pastes their own API key inside the app when a block asks for it. Nothing to configure at deploy time, works out of the box.
+
+**OAuth-based** (the Connect Service button): needs *you*, the person who deployed, to register an application with that provider first. This is unavoidable. OAuth identifies the application, not the user, so there is no way to ship working credentials in a public template, and no way for the app to invent them.
+
+To enable one:
+
+1. Create an app in that provider's developer console
+2. Register this callback URL, using your own frontend address:
+   `https://<your-frontend-domain>/auth/integrations/oauth_callback`
+3. Add the pair to the `backend` service and redeploy
+
+| Provider | Variables |
+|---|---|
+| GitHub | `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET` |
+| Google | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` |
+| Notion | `NOTION_CLIENT_ID`, `NOTION_CLIENT_SECRET` |
+| Reddit | `REDDIT_CLIENT_ID`, `REDDIT_CLIENT_SECRET` |
+| Discord | `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET` |
+| Twitter / X | `TWITTER_CLIENT_ID`, `TWITTER_CLIENT_SECRET` |
+| Linear | `LINEAR_CLIENT_ID`, `LINEAR_CLIENT_SECRET` |
+| Todoist | `TODOIST_CLIENT_ID`, `TODOIST_CLIENT_SECRET` |
+
+Add only the ones you actually want. Each is independent, and the rest keep working as before. The backend logs a line at startup for any provider that implements OAuth without both variables set, which is a quick way to see what is currently missing.
+
 ## Using your own domain
 
 **Read this before you point a custom domain at the frontend, or the chat will break.**
