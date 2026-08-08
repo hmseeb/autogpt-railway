@@ -1,1 +1,275 @@
-{"buckets": {}, "services": {"40af75df-5ef4-4204-9027-b16d61923628": {"icon": null, "name": "frontend", "deploy": {"startCommand": null, "healthcheckPath": "/", "restartPolicyType": "ALWAYS", "restartPolicyMaxRetries": 10}, "source": {"image": "ghcr.io/hmseeb/autogpt-railway-frontend:autogpt-platform-beta-v0.7.0"}, "variables": {"PORT": {"isOptional": false, "defaultValue": "3000"}, "DATABASE_URL": {"isOptional": false, "defaultValue": "postgresql://postgres:${{postgres.POSTGRES_PASSWORD}}@${{postgres.RAILWAY_PRIVATE_DOMAIN}}:5432/postgres"}, "AUTH_DB_SCHEMA": {"isOptional": false, "defaultValue": "platform"}, "AGPT_SERVER_URL": {"isOptional": false, "defaultValue": "https://${{backend.RAILWAY_PUBLIC_DOMAIN}}/api"}, "BETTER_AUTH_URL": {"isOptional": false, "defaultValue": "https://${{RAILWAY_PUBLIC_DOMAIN}}"}, "AGPT_WS_SERVER_URL": {"isOptional": false, "defaultValue": "wss://${{backend.RAILWAY_PUBLIC_DOMAIN}}/ws"}, "BETTER_AUTH_SECRET": {"isOptional": false, "defaultValue": "${{secret(64)}}"}, "NEXT_PUBLIC_AGPT_SERVER_URL": {"isOptional": false, "defaultValue": "https://${{backend.RAILWAY_PUBLIC_DOMAIN}}/api"}, "NEXT_PUBLIC_FRONTEND_BASE_URL": {"isOptional": false, "defaultValue": "https://${{RAILWAY_PUBLIC_DOMAIN}}"}, "NEXT_PUBLIC_AGPT_WS_SERVER_URL": {"isOptional": false, "defaultValue": "wss://${{backend.RAILWAY_PUBLIC_DOMAIN}}/ws"}, "AUTH_REQUIRE_EMAIL_VERIFICATION": {"isOptional": false, "defaultValue": "false"}}, "networking": {"serviceDomains": {"<hasDomain>:3000": {"port": 3000}}}}, "75ff3e2b-428d-4c9f-9457-37ecd94c8046": {"icon": null, "name": "rabbitmq", "deploy": {"startCommand": null, "healthcheckPath": null, "restartPolicyType": "ALWAYS", "restartPolicyMaxRetries": 10}, "source": {"image": "rabbitmq:4.1.4"}, "variables": {"RABBITMQ_DEFAULT_PASS": {"isOptional": false, "defaultValue": "${{secret(32)}}"}, "RABBITMQ_DEFAULT_USER": {"isOptional": false, "defaultValue": "autogpt"}}, "volumeMounts": {"75ff3e2b-428d-4c9f-9457-37ecd94c8046": {"mountPath": "/var/lib/rabbitmq"}}}, "76a92f05-16b8-4dce-adf4-73b29cff92d1": {"icon": null, "name": "postgres", "deploy": {"startCommand": null, "healthcheckPath": null, "restartPolicyType": "ALWAYS", "restartPolicyMaxRetries": 10}, "source": {"image": "pgvector/pgvector:pg15"}, "variables": {"PGDATA": {"isOptional": false, "defaultValue": "/var/lib/postgresql/data/pgdata"}, "POSTGRES_DB": {"isOptional": false, "defaultValue": "postgres"}, "POSTGRES_PASSWORD": {"isOptional": false, "defaultValue": "${{secret(32)}}"}}, "volumeMounts": {"76a92f05-16b8-4dce-adf4-73b29cff92d1": {"mountPath": "/var/lib/postgresql/data"}}}, "991fe5da-91c7-420c-a965-36e59bf8264c": {"icon": null, "name": "redis", "deploy": {"startCommand": "/bin/sh -c \"redis-server --port 6379 --cluster-enabled yes --cluster-config-file /tmp/nodes.conf --cluster-require-full-coverage no --cluster-announce-hostname $RAILWAY_PRIVATE_DOMAIN --cluster-preferred-endpoint-type hostname --protected-mode no & until redis-cli -p 6379 ping >/dev/null 2>&1; do sleep 1; done; redis-cli -p 6379 cluster addslotsrange 0 16383 || true; wait\"", "healthcheckPath": null, "restartPolicyType": "ALWAYS", "restartPolicyMaxRetries": 10}, "source": {"image": "redis:7"}, "variables": {}}, "a5e696c5-8db2-418b-a554-32c9d45bb7bc": {"icon": null, "name": "backend", "deploy": {"startCommand": null, "healthcheckPath": "/health", "restartPolicyType": "ALWAYS", "restartPolicyMaxRetries": 10}, "source": {"image": "ghcr.io/hmseeb/autogpt-railway-backend:autogpt-platform-beta-v0.7.0"}, "variables": {"PORT": {"isOptional": false, "defaultValue": "8080"}, "DB_HOST": {"isOptional": false, "defaultValue": "${{postgres.RAILWAY_PRIVATE_DOMAIN}}"}, "DB_NAME": {"isOptional": false, "defaultValue": "postgres"}, "DB_PASS": {"isOptional": false, "defaultValue": "${{postgres.POSTGRES_PASSWORD}}"}, "DB_PORT": {"isOptional": false, "defaultValue": "5432"}, "DB_USER": {"isOptional": false, "defaultValue": "postgres"}, "DIRECT_URL": {"isOptional": false, "defaultValue": "postgresql://postgres:${{postgres.POSTGRES_PASSWORD}}@${{postgres.RAILWAY_PRIVATE_DOMAIN}}:5432/postgres?connect_timeout=60&schema=platform"}, "REDIS_HOST": {"isOptional": false, "defaultValue": "${{redis.RAILWAY_PRIVATE_DOMAIN}}"}, "REDIS_PORT": {"isOptional": false, "defaultValue": "6379"}, "DATABASE_URL": {"isOptional": false, "defaultValue": "postgresql://postgres:${{postgres.POSTGRES_PASSWORD}}@${{postgres.RAILWAY_PRIVATE_DOMAIN}}:5432/postgres?connect_timeout=60&schema=platform"}, "JWT_JWKS_URL": {"isOptional": false, "defaultValue": "https://${{frontend.RAILWAY_PUBLIC_DOMAIN}}/api/auth/jwks"}, "RABBITMQ_HOST": {"isOptional": false, "defaultValue": "${{rabbitmq.RAILWAY_PRIVATE_DOMAIN}}"}, "RABBITMQ_PORT": {"isOptional": false, "defaultValue": "5672"}, "ENCRYPTION_KEY": {"isOptional": false, "defaultValue": "${{secret(64, \"0123456789abcdef\")}}"}, "JWT_VERIFY_KEY": {"isOptional": false, "defaultValue": "${{secret(64)}}"}, "FRONTEND_BASE_URL": {"isOptional": false, "defaultValue": "https://${{frontend.RAILWAY_PUBLIC_DOMAIN}}"}, "PLATFORM_BASE_URL": {"isOptional": false, "defaultValue": "https://${{RAILWAY_PUBLIC_DOMAIN}}"}, "RABBITMQ_DEFAULT_PASS": {"isOptional": false, "defaultValue": "${{rabbitmq.RABBITMQ_DEFAULT_PASS}}"}, "RABBITMQ_DEFAULT_USER": {"isOptional": false, "defaultValue": "autogpt"}, "CLAMAV_SERVICE_ENABLED": {"isOptional": false, "defaultValue": "false"}, "UNSUBSCRIBE_SECRET_KEY": {"isOptional": false, "defaultValue": "${{secret(64, \"0123456789abcdef\")}}"}}, "networking": {"serviceDomains": {"<hasDomain>:8080": {"port": 8080}}}, "volumeMounts": {"a5e696c5-8db2-418b-a554-32c9d45bb7bc": {"mountPath": "/app/autogpt_platform/backend/workspaces"}}}}}
+{
+ "buckets": {},
+ "services": {
+  "40af75df-5ef4-4204-9027-b16d61923628": {
+   "icon": "https://avatars.githubusercontent.com/u/130738209",
+   "name": "frontend",
+   "deploy": {
+    "startCommand": null,
+    "healthcheckPath": "/",
+    "restartPolicyType": "ALWAYS",
+    "restartPolicyMaxRetries": 10
+   },
+   "source": {
+    "image": "ghcr.io/hmseeb/autogpt-railway-frontend:autogpt-platform-beta-v0.7.0"
+   },
+   "variables": {
+    "PORT": {
+     "isOptional": false,
+     "defaultValue": "3000"
+    },
+    "DATABASE_URL": {
+     "isOptional": false,
+     "defaultValue": "postgresql://postgres:${{postgres.POSTGRES_PASSWORD}}@${{postgres.RAILWAY_PRIVATE_DOMAIN}}:5432/postgres"
+    },
+    "AUTH_DB_SCHEMA": {
+     "isOptional": false,
+     "defaultValue": "platform"
+    },
+    "AGPT_SERVER_URL": {
+     "isOptional": false,
+     "defaultValue": "https://${{backend.RAILWAY_PUBLIC_DOMAIN}}/api"
+    },
+    "BETTER_AUTH_URL": {
+     "isOptional": false,
+     "defaultValue": "https://${{RAILWAY_PUBLIC_DOMAIN}}"
+    },
+    "AGPT_WS_SERVER_URL": {
+     "isOptional": false,
+     "defaultValue": "wss://${{backend.RAILWAY_PUBLIC_DOMAIN}}/ws"
+    },
+    "BETTER_AUTH_SECRET": {
+     "isOptional": false,
+     "defaultValue": "${{secret(64)}}"
+    },
+    "NEXT_PUBLIC_AGPT_SERVER_URL": {
+     "isOptional": false,
+     "defaultValue": "https://${{backend.RAILWAY_PUBLIC_DOMAIN}}/api"
+    },
+    "NEXT_PUBLIC_FRONTEND_BASE_URL": {
+     "isOptional": false,
+     "defaultValue": "https://${{RAILWAY_PUBLIC_DOMAIN}}"
+    },
+    "NEXT_PUBLIC_AGPT_WS_SERVER_URL": {
+     "isOptional": false,
+     "defaultValue": "wss://${{backend.RAILWAY_PUBLIC_DOMAIN}}/ws"
+    },
+    "AUTH_REQUIRE_EMAIL_VERIFICATION": {
+     "isOptional": false,
+     "defaultValue": "false"
+    }
+   },
+   "networking": {
+    "serviceDomains": {
+     "<hasDomain>:3000": {
+      "port": 3000
+     }
+    }
+   }
+  },
+  "75ff3e2b-428d-4c9f-9457-37ecd94c8046": {
+   "icon": "https://cdn.simpleicons.org/rabbitmq",
+   "name": "rabbitmq",
+   "deploy": {
+    "startCommand": null,
+    "healthcheckPath": null,
+    "restartPolicyType": "ALWAYS",
+    "restartPolicyMaxRetries": 10
+   },
+   "source": {
+    "image": "rabbitmq:4.1.4"
+   },
+   "variables": {
+    "RABBITMQ_DEFAULT_PASS": {
+     "isOptional": false,
+     "defaultValue": "${{secret(32)}}"
+    },
+    "RABBITMQ_DEFAULT_USER": {
+     "isOptional": false,
+     "defaultValue": "autogpt"
+    }
+   },
+   "volumeMounts": {
+    "75ff3e2b-428d-4c9f-9457-37ecd94c8046": {
+     "mountPath": "/var/lib/rabbitmq"
+    }
+   }
+  },
+  "76a92f05-16b8-4dce-adf4-73b29cff92d1": {
+   "icon": "https://devicons.railway.com/i/postgresql.svg",
+   "name": "postgres",
+   "deploy": {
+    "startCommand": null,
+    "healthcheckPath": null,
+    "restartPolicyType": "ALWAYS",
+    "restartPolicyMaxRetries": 10
+   },
+   "source": {
+    "image": "pgvector/pgvector:pg15"
+   },
+   "variables": {
+    "PGDATA": {
+     "isOptional": false,
+     "defaultValue": "/var/lib/postgresql/data/pgdata"
+    },
+    "POSTGRES_DB": {
+     "isOptional": false,
+     "defaultValue": "postgres"
+    },
+    "POSTGRES_PASSWORD": {
+     "isOptional": false,
+     "defaultValue": "${{secret(32)}}"
+    }
+   },
+   "volumeMounts": {
+    "76a92f05-16b8-4dce-adf4-73b29cff92d1": {
+     "mountPath": "/var/lib/postgresql/data"
+    }
+   }
+  },
+  "991fe5da-91c7-420c-a965-36e59bf8264c": {
+   "icon": "https://devicons.railway.com/i/redis.svg",
+   "name": "redis",
+   "deploy": {
+    "startCommand": "/bin/sh -c \"redis-server --port 6379 --cluster-enabled yes --cluster-config-file /tmp/nodes.conf --cluster-require-full-coverage no --cluster-announce-hostname $RAILWAY_PRIVATE_DOMAIN --cluster-preferred-endpoint-type hostname --protected-mode no & until redis-cli -p 6379 ping >/dev/null 2>&1; do sleep 1; done; redis-cli -p 6379 cluster addslotsrange 0 16383 || true; wait\"",
+    "healthcheckPath": null,
+    "restartPolicyType": "ALWAYS",
+    "restartPolicyMaxRetries": 10
+   },
+   "source": {
+    "image": "redis:7"
+   },
+   "variables": {}
+  },
+  "a5e696c5-8db2-418b-a554-32c9d45bb7bc": {
+   "icon": "https://avatars.githubusercontent.com/u/130738209",
+   "name": "backend",
+   "deploy": {
+    "startCommand": null,
+    "healthcheckPath": "/health",
+    "restartPolicyType": "ALWAYS",
+    "restartPolicyMaxRetries": 10
+   },
+   "source": {
+    "image": "ghcr.io/hmseeb/autogpt-railway-backend:autogpt-platform-beta-v0.7.0"
+   },
+   "variables": {
+    "PORT": {
+     "isOptional": false,
+     "defaultValue": "8080"
+    },
+    "DB_HOST": {
+     "isOptional": false,
+     "defaultValue": "${{postgres.RAILWAY_PRIVATE_DOMAIN}}"
+    },
+    "DB_NAME": {
+     "isOptional": false,
+     "defaultValue": "postgres"
+    },
+    "DB_PASS": {
+     "isOptional": false,
+     "defaultValue": "${{postgres.POSTGRES_PASSWORD}}"
+    },
+    "DB_PORT": {
+     "isOptional": false,
+     "defaultValue": "5432"
+    },
+    "DB_USER": {
+     "isOptional": false,
+     "defaultValue": "postgres"
+    },
+    "DIRECT_URL": {
+     "isOptional": false,
+     "defaultValue": "postgresql://postgres:${{postgres.POSTGRES_PASSWORD}}@${{postgres.RAILWAY_PRIVATE_DOMAIN}}:5432/postgres?connect_timeout=60&schema=platform"
+    },
+    "REDIS_HOST": {
+     "isOptional": false,
+     "defaultValue": "${{redis.RAILWAY_PRIVATE_DOMAIN}}"
+    },
+    "REDIS_PORT": {
+     "isOptional": false,
+     "defaultValue": "6379"
+    },
+    "DATABASE_URL": {
+     "isOptional": false,
+     "defaultValue": "postgresql://postgres:${{postgres.POSTGRES_PASSWORD}}@${{postgres.RAILWAY_PRIVATE_DOMAIN}}:5432/postgres?connect_timeout=60&schema=platform"
+    },
+    "JWT_JWKS_URL": {
+     "isOptional": false,
+     "defaultValue": "https://${{frontend.RAILWAY_PUBLIC_DOMAIN}}/api/auth/jwks"
+    },
+    "RABBITMQ_HOST": {
+     "isOptional": false,
+     "defaultValue": "${{rabbitmq.RAILWAY_PRIVATE_DOMAIN}}"
+    },
+    "RABBITMQ_PORT": {
+     "isOptional": false,
+     "defaultValue": "5672"
+    },
+    "ENCRYPTION_KEY": {
+     "isOptional": false,
+     "defaultValue": "${{secret(64, \"0123456789abcdef\")}}"
+    },
+    "JWT_VERIFY_KEY": {
+     "isOptional": false,
+     "defaultValue": "${{secret(64)}}"
+    },
+    "FRONTEND_BASE_URL": {
+     "isOptional": false,
+     "defaultValue": "https://${{frontend.RAILWAY_PUBLIC_DOMAIN}}"
+    },
+    "PLATFORM_BASE_URL": {
+     "isOptional": false,
+     "defaultValue": "https://${{RAILWAY_PUBLIC_DOMAIN}}"
+    },
+    "OPEN_ROUTER_API_KEY": {
+     "isOptional": true,
+     "description": "Powers the built-in chat assistant and marketplace search. Get one at openrouter.ai/keys. Leave blank if you are using a Claude subscription token instead.",
+     "defaultValue": ""
+    },
+    "RABBITMQ_DEFAULT_PASS": {
+     "isOptional": false,
+     "defaultValue": "${{rabbitmq.RABBITMQ_DEFAULT_PASS}}"
+    },
+    "RABBITMQ_DEFAULT_USER": {
+     "isOptional": false,
+     "defaultValue": "autogpt"
+    },
+    "CLAMAV_SERVICE_ENABLED": {
+     "isOptional": false,
+     "defaultValue": "false"
+    },
+    "UNSUBSCRIBE_SECRET_KEY": {
+     "isOptional": false,
+     "defaultValue": "${{secret(64, \"0123456789abcdef\")}}"
+    },
+    "CLAUDE_CODE_OAUTH_TOKEN": {
+     "isOptional": true,
+     "description": "Your own token from running claude setup-token on a machine signed in to Claude Code. Only used when the setting above is true.",
+     "defaultValue": ""
+    },
+    "BACKEND_CORS_ALLOW_ORIGINS": {
+     "isOptional": false,
+     "defaultValue": "[\"https://${{frontend.RAILWAY_PUBLIC_DOMAIN}}\"]"
+    },
+    "CHAT_USE_CLAUDE_CODE_SUBSCRIPTION": {
+     "isOptional": false,
+     "description": "Set true to power the chat assistant with your own Claude Pro or Max subscription instead of an API key. Requires the token below. Personal use only.",
+     "defaultValue": "false"
+    }
+   },
+   "networking": {
+    "serviceDomains": {
+     "<hasDomain>:8080": {
+      "port": 8080
+     }
+    }
+   },
+   "volumeMounts": {
+    "a5e696c5-8db2-418b-a554-32c9d45bb7bc": {
+     "mountPath": "/app/autogpt_platform/backend/workspaces"
+    }
+   }
+  }
+ }
+}

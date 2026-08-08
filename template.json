@@ -60,6 +60,12 @@
         "$JWT_JWKS_URL_note": "public https, not private http: the auth lib refuses cleartext JWKS from any dotted hostname (autogpt_libs/auth/config.py) and Railway private domains are dotted. https skips that check entirely.",
         "PLATFORM_BASE_URL": "https://${{RAILWAY_PUBLIC_DOMAIN}}",
         "FRONTEND_BASE_URL": "https://${{frontend.RAILWAY_PUBLIC_DOMAIN}}",
+        "BACKEND_CORS_ALLOW_ORIGINS": "[\"https://${{frontend.RAILWAY_PUBLIC_DOMAIN}}\"]",
+        "$BACKEND_CORS_ALLOW_ORIGINS_note": "REQUIRED, and its absence is silent. Default is [\"http://localhost:3000\"], so a deploy without it looks healthy and every screen works EXCEPT the copilot chat, which is the one surface that calls the backend directly from the browser instead of through the frontend's /api/proxy. The preflight 400s, the user sees only 'Connection lost, reconnecting' with nothing in the logs but an OPTIONS 400, and the backend's own 'no API key configured' message never reaches them. Pydantic parses this as List[str] so the value must be a JSON array, not a bare URL. Shipped broken 2026-08-08, found by driving the chat.",
+        "OPEN_ROUTER_API_KEY": "",
+        "CHAT_USE_CLAUDE_CODE_SUBSCRIPTION": "false",
+        "CLAUDE_CODE_OAUTH_TOKEN": "",
+        "$provider_note": "The copilot chat needs a SERVER-level model credential; per-user block credentials in the app's Settings do NOT feed it (the listing copy claimed they did until 2026-08-08). base_url defaults to OpenRouter and OPEN_ROUTER_API_KEY is in the openrouter transport's fallback chain, so that one var alone is enough, and it doubles as the embedding client for marketplace search. Alternatives: CHAT_USE_OPENROUTER=false + ANTHROPIC_API_KEY; CHAT_USE_CLAUDE_CODE_SUBSCRIPTION=true + CLAUDE_CODE_OAUTH_TOKEN (from `claude setup-token`); CHAT_USE_LOCAL=true + CHAT_BASE_URL + CHAT_API_KEY. CLAUDE_CODE_REFRESH_TOKEN is deliberately NOT exposed: the only source is the deployer's own desktop keychain login, and sharing that pair across two machines risks logging them out locally. All three are marked optional; with none set the platform deploys fine and the chat returns upstream's explicit 'No API key configured' message.",
         "CLAMAV_SERVICE_ENABLED": "false",
         "$ENCRYPTION_KEY_note": "hex alphabet because fernet needs base64 which secret() cannot emit; boot script derives the fernet key from the hex (SparkyFitness precedent for the alphabet arg)."
       },
