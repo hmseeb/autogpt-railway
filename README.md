@@ -80,7 +80,9 @@ Every OAuth provider in `autogpt-platform-beta-v0.7.0`:
 
 Add only the ones you actually want. Each is independent, and the rest keep working as before. The backend logs a line at startup for any provider that implements OAuth without both variables set, which is a quick way to see what is currently missing.
 
-If a later upstream release adds a provider not listed here, the naming rule is `<PROVIDER>_CLIENT_ID` and `<PROVIDER>_CLIENT_SECRET`, which is what upstream's own registration helper defaults to.
+That table is not maintained by hand. `test/oauth-providers.py` extracts the list from the pinned upstream source across both registration paths, and CI fails the build if the readme drifts, so a release that adds a provider cannot ship undocumented. Run `python3 test/oauth-providers.py --upstream ./upstream` to print the current set.
+
+The naming rule, for reference: `<PROVIDER>_CLIENT_ID` and `<PROVIDER>_CLIENT_SECRET`, which is what upstream's own registration helper defaults to.
 
 Two things this section does not cover, because neither uses deployment variables:
 
@@ -110,3 +112,5 @@ While you are there, point `FRONTEND_BASE_URL` on the backend and `BETTER_AUTH_U
 ## Regenerating
 
 Contract tests in `test/` run in CI before any image is pushed. To bump the upstream version: change `UPSTREAM_TAG` in `.github/workflows/build.yml` and the two image tags in `template.json`, push, wait for green, then redeploy services.
+
+If the bump fails on the OAuth provider check, upstream added or removed an integration. Run `python3 test/oauth-providers.py --upstream ./upstream` and update the readme table to match; that is the intended workflow, not a reason to skip the check.
