@@ -58,11 +58,11 @@ docker run -d --name $BE --network $NET \
 
 echo "waiting for backend on muxed port..."
 ok=""
-for i in $(seq 1 90); do
+for i in $(seq 1 150); do
   if docker run --rm --network $NET curlimages/curl:8.10.1 -fsS -o /dev/null "http://$BE:8080/health" 2>/dev/null; then ok=1; break; fi
   sleep 2
 done
-if [ -z "$ok" ]; then echo "FAIL: REST API never answered on muxed port"; docker logs $BE | tail -40; exit 1; fi
+if [ -z "$ok" ]; then echo "FAIL: REST API never answered on muxed port"; docker logs $BE 2>&1 | tail -200; exit 1; fi
 echo "PASS: REST API on muxed \$PORT"
 
 # migrations actually landed

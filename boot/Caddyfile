@@ -5,9 +5,9 @@
 
 :{$PORT} {
 	handle /ws* {
-		reverse_proxy localhost:8001
+		reverse_proxy 127.0.0.1:8001
 	}
 	handle {
-		reverse_proxy localhost:8006
+		reverse_proxy 127.0.0.1:8006
 	}
 }

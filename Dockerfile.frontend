@@ -12,4 +12,7 @@ COPY boot/frontend-boot.sh /usr/local/bin/frontend-boot.sh
 RUN chmod +x /usr/local/bin/frontend-boot.sh && chown -R nextjs:nodejs /app
 USER nextjs
 
+# dual-stack bind: Railway dials containers over IPv6, healthchecks over IPv4
+ENV HOSTNAME="::"
+
 CMD ["/usr/local/bin/frontend-boot.sh"]
