@@ -190,6 +190,11 @@
      "isOptional": false,
      "defaultValue": "6379"
     },
+    "CHAT_API_KEY": {
+     "isOptional": true,
+     "description": "The key for the endpoint in CHAT_BASE_URL. Only needed with option 4.",
+     "defaultValue": ""
+    },
     "DATABASE_URL": {
      "isOptional": false,
      "defaultValue": "postgresql://postgres:${{postgres.POSTGRES_PASSWORD}}@${{postgres.RAILWAY_PRIVATE_DOMAIN}}:5432/postgres?connect_timeout=60&schema=platform"
@@ -197,6 +202,11 @@
     "JWT_JWKS_URL": {
      "isOptional": false,
      "defaultValue": "https://${{frontend.RAILWAY_PUBLIC_DOMAIN}}/api/auth/jwks"
+    },
+    "CHAT_BASE_URL": {
+     "isOptional": true,
+     "description": "Fill in ONE of the four provider options. Option 4: any OpenAI-compatible endpoint, including OpenAI itself (https://api.openai.com/v1) or your own Ollama or vLLM server. Pair it with CHAT_API_KEY.",
+     "defaultValue": ""
     },
     "RABBITMQ_HOST": {
      "isOptional": false,
@@ -214,6 +224,11 @@
      "isOptional": false,
      "defaultValue": "${{secret(64)}}"
     },
+    "ANTHROPIC_API_KEY": {
+     "isOptional": true,
+     "description": "Fill in ONE of the four provider options. Option 2: an Anthropic API key from console.anthropic.com.",
+     "defaultValue": ""
+    },
     "FRONTEND_BASE_URL": {
      "isOptional": false,
      "defaultValue": "https://${{frontend.RAILWAY_PUBLIC_DOMAIN}}"
@@ -224,7 +239,7 @@
     },
     "OPEN_ROUTER_API_KEY": {
      "isOptional": true,
-     "description": "Powers the built-in chat assistant and marketplace search. Get one at openrouter.ai/keys. Leave blank if you are using a Claude subscription token instead.",
+     "description": "Fill in ONE of the four provider options. Option 1, recommended: an OpenRouter key from openrouter.ai/keys. This is the only option that also powers marketplace search.",
      "defaultValue": ""
     },
     "RABBITMQ_DEFAULT_PASS": {
@@ -245,17 +260,12 @@
     },
     "CLAUDE_CODE_OAUTH_TOKEN": {
      "isOptional": true,
-     "description": "Your own token from running claude setup-token on a machine signed in to Claude Code. Only used when the setting above is true.",
+     "description": "Fill in ONE of the four provider options. Option 3: use your own Claude Pro or Max subscription. Run 'claude setup-token' on a machine signed in to Claude Code and paste the result. Personal instances only, a consumer subscription is not licensed to serve other people.",
      "defaultValue": ""
     },
     "BACKEND_CORS_ALLOW_ORIGINS": {
      "isOptional": false,
      "defaultValue": "[\"https://${{frontend.RAILWAY_PUBLIC_DOMAIN}}\"]"
-    },
-    "CHAT_USE_CLAUDE_CODE_SUBSCRIPTION": {
-     "isOptional": false,
-     "description": "Set true to power the chat assistant with your own Claude Pro or Max subscription instead of an API key. Requires the token below. Personal use only.",
-     "defaultValue": "false"
     }
    },
    "networking": {
