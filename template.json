@@ -12,7 +12,9 @@
         "POSTGRES_DB": "postgres",
         "PGDATA": "/var/lib/postgresql/data/pgdata"
       },
-      "volume": { "mountPath": "/var/lib/postgresql/data" },
+      "volume": {
+        "mountPath": "/var/lib/postgresql/data"
+      },
       "restartPolicy": "ALWAYS"
     },
     "redis": {
@@ -28,7 +30,9 @@
         "RABBITMQ_DEFAULT_USER": "autogpt",
         "RABBITMQ_DEFAULT_PASS": "${{secret(32)}}"
       },
-      "volume": { "mountPath": "/var/lib/rabbitmq" },
+      "volume": {
+        "mountPath": "/var/lib/rabbitmq"
+      },
       "restartPolicy": "ALWAYS"
     },
     "backend": {
@@ -59,8 +63,12 @@
         "CLAMAV_SERVICE_ENABLED": "false",
         "$ENCRYPTION_KEY_note": "hex alphabet because fernet needs base64 which secret() cannot emit; boot script derives the fernet key from the hex (SparkyFitness precedent for the alphabet arg)."
       },
-      "volume": { "mountPath": "/app/autogpt_platform/backend/workspaces" },
-      "domain": { "targetPortOnSource": 8080 },
+      "volume": {
+        "mountPath": "/app/autogpt_platform/backend/workspaces"
+      },
+      "domain": {
+        "targetPortOnSource": 8080
+      },
       "healthcheckPath": "/health",
       "restartPolicy": "ALWAYS"
     },
@@ -81,11 +89,21 @@
         "AUTH_REQUIRE_EMAIL_VERIFICATION": "false",
         "$AGPT_SERVER_URL_note": "server-side reads go over the public URL rather than private :8006 because the REST bind interface on v6 private is unverified; revisit if egress cost matters."
       },
-      "domain": { "targetPortOnSource": 3000 },
+      "domain": {
+        "targetPortOnSource": 3000
+      },
       "healthcheckPath": "/",
       "restartPolicy": "ALWAYS"
     }
   },
   "$deployer_prompts": "None required. LLM provider keys are added inside the app per-user (Settings > Credentials), so the template deploys with zero prompts.",
-  "$source_project_note": "In the LIVE source project, cross-service RAILWAY_PUBLIC_DOMAIN references resolve EMPTY (memory: railway-cross-service-public-domain); set those five URL vars as literals there and only use the reference form in the repaired template config."
+  "$source_project_note": "In the LIVE source project, cross-service RAILWAY_PUBLIC_DOMAIN references resolve EMPTY (memory: railway-cross-service-public-domain); set those five URL vars as literals there and only use the reference form in the repaired template config.",
+  "$published": {
+    "templateId": "e8802f8e-65e7-4308-b164-d136e341bb92",
+    "code": "autogpt-platform",
+    "url": "https://railway.com/deploy/autogpt-platform",
+    "sourceProjectId": "7b44aad8-d23a-4d95-b744-ef9cbff695dd",
+    "publishedAt": "2026-08-08",
+    "images": "ghcr.io/hmseeb/autogpt-railway-{backend,frontend}:autogpt-platform-beta-v0.7.0"
+  }
 }
