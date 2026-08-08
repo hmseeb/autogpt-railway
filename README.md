@@ -25,20 +25,29 @@ The two ghcr images are thin overlays on the pinned upstream release `autogpt-pl
 
 This trips everyone up, so it is worth being explicit.
 
-**The chat assistant** is powered by one credential on the `backend` service, set by whoever deploys. Nothing in the app's Settings page affects it. Fill in exactly one of these four at deploy time:
+**The chat assistant** is powered by credentials on the `backend` service, set by whoever deploys. Nothing in the app's Settings page affects it.
 
-| Route | Set on `backend` |
-|---|---|
-| OpenRouter (recommended, also powers marketplace search) | `OPEN_ROUTER_API_KEY` |
-| Anthropic direct | `ANTHROPIC_API_KEY` |
-| Your own Claude Pro/Max subscription | `CLAUDE_CODE_OAUTH_TOKEN`, from running `claude setup-token` |
-| Your own OpenAI-compatible endpoint, incl. an OpenAI key | `CHAT_BASE_URL` and `CHAT_API_KEY` |
+**Start with `OPEN_ROUTER_API_KEY`.** It is the only single credential that gives you a complete assistant, because two features are wired to OpenRouter regardless of which model answers your messages:
 
-One credential is all you need. The boot script turns on the matching mode for whichever you filled, so there is no second flag to remember. If you want an unusual combination, setting a mode switch by hand (`CHAT_USE_OPENROUTER`, `CHAT_USE_CLAUDE_CODE_SUBSCRIPTION`, `CHAT_USE_LOCAL`) always overrides what the boot script picked.
+- **Web search.** The assistant's search tool calls `perplexity/sonar` through OpenRouter. Without it, asking the assistant to look something up returns "Web search is unavailable".
+- **Marketplace search**, which needs an embedding model.
 
-With none of them set the platform still deploys and agents you build still run; only the chat is affected, and it replies with an error naming what it wants. The deploy logs list the options too.
+The other three routes choose which model *writes the replies*. They do not provide either of the above:
 
-The subscription route is for a personal instance. A Claude consumer subscription is not licensed to serve other people, so do not use it on an instance you open up to others. It also only covers the chat, not marketplace search. A `claude setup-token` token works on its own; you do not need a refresh token.
+| Route | Set on `backend` | Covers |
+|---|---|---|
+| OpenRouter | `OPEN_ROUTER_API_KEY` | chat, web search, marketplace search |
+| Anthropic direct | `ANTHROPIC_API_KEY` | chat only |
+| Your own Claude Pro/Max subscription | `CLAUDE_CODE_OAUTH_TOKEN`, from `claude setup-token` | chat only |
+| Your own OpenAI-compatible endpoint | `CHAT_BASE_URL` and `CHAT_API_KEY` | chat only |
+
+**These combine.** Want Claude answering your messages but working search? Set `CLAUDE_CODE_OAUTH_TOKEN` *and* `OPEN_ROUTER_API_KEY`. The boot script routes the chat to your subscription and search to OpenRouter, and prints which it picked. The same applies to the Anthropic route.
+
+The boot script turns on the matching mode for whichever credential you filled, so there is no second flag to remember. Setting a mode switch by hand (`CHAT_USE_OPENROUTER`, `CHAT_USE_CLAUDE_CODE_SUBSCRIPTION`, `CHAT_USE_LOCAL`) always overrides what it picked.
+
+With nothing set the platform still deploys and agents you build still run; only the chat is affected, and it replies with an error naming what it wants. The deploy logs list the options too.
+
+The subscription route is for a personal instance. A Claude consumer subscription is not licensed to serve other people, so do not use it on an instance you open up to others. A `claude setup-token` token works on its own; you do not need a refresh token.
 
 **Agent blocks** are the opposite: each user adds their own provider keys inside the app under Settings, and those only feed the blocks wired up in the builder.
 

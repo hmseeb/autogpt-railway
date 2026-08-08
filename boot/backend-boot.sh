@@ -48,6 +48,23 @@ if [ -n "${OPEN_ROUTER_API_KEY:-}${ANTHROPIC_API_KEY:-}${CLAUDE_CODE_OAUTH_TOKEN
   else
     echo "provider: using the CHAT_USE_* switches set on this service"
   fi
+  # The copilot's web_search tool calls perplexity/sonar through whatever
+  # CHAT_API_KEY + CHAT_BASE_URL point at, and marketplace search needs an
+  # embedding client, neither of which the chat transport provides. The
+  # subscription and local transports have an EMPTY api_key fallback chain
+  # (config.py _TRANSPORT_PROFILES), so OPEN_ROUTER_API_KEY alone never
+  # reaches them: it has to be CHAT_API_KEY. Bridge it here so one pasted
+  # OpenRouter key lights up search on every route rather than just its own.
+  # Skipped when CHAT_BASE_URL is set, since that key belongs to that endpoint.
+  if [ -n "${OPEN_ROUTER_API_KEY:-}" ] && [ -z "${CHAT_API_KEY:-}" ] && [ -z "${CHAT_BASE_URL:-}" ]; then
+    export CHAT_API_KEY="$OPEN_ROUTER_API_KEY"
+    echo "web search + marketplace search: enabled via OpenRouter"
+  elif [ -z "${OPEN_ROUTER_API_KEY:-}${CHAT_API_KEY:-}" ]; then
+    echo "NOTE: no OpenRouter credential, so the assistant's web search and"
+    echo "      marketplace search will report themselves unavailable. The"
+    echo "      chat itself works. Add OPEN_ROUTER_API_KEY to enable both;"
+    echo "      it can sit alongside the provider you already configured."
+  fi
 else
   echo "=============================================================="
   echo "NO CHAT PROVIDER CONFIGURED. The platform will start and agents"
