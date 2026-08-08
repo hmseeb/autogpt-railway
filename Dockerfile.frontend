@@ -1,0 +1,15 @@
+# Railway overlay on the upstream frontend image.
+# BASE_IMAGE is the upstream `prod` target built from the pinned tag WITH
+# sentinel URLs in frontend/.env.production (the CI workflow writes that
+# file before building), because Next.js inlines NEXT_PUBLIC_* into the
+# client bundle at build time. The boot script rewrites the sentinels to
+# the deployer's real URLs before starting the server.
+ARG BASE_IMAGE
+FROM ${BASE_IMAGE}
+
+USER root
+COPY boot/frontend-boot.sh /usr/local/bin/frontend-boot.sh
+RUN chmod +x /usr/local/bin/frontend-boot.sh && chown -R nextjs:nodejs /app
+USER nextjs
+
+CMD ["/usr/local/bin/frontend-boot.sh"]

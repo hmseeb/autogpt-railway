@@ -1,0 +1,90 @@
+{
+  "$name": "AutoGPT Platform",
+  "$upstream": "Significant-Gravitas/AutoGPT @ autogpt-platform-beta-v0.7.0 (2026-08-05)",
+  "$license_note": "autogpt_platform/ is PolyForm Shield. Railway staff ruling 2026-08-08: fine to template while a self-hosted option exists; an owner takedown request unpublishes the template, no account strike. Business risk accepted.",
+  "$topology_note": "5 services instead of upstream's 16. All ten backend processes run in one container via upstream's own `app` poetry script (backend/backend/app.py main()); every *_HOST defaults to localhost so colocation is zero-config, and the workspace volume (which multiple backend processes write) cannot be shared across Railway services anyway. clamav is skipped via CLAMAV_SERVICE_ENABLED=false (official flag, default true). falkordb/graphiti is skipped: rollout is gated on a LaunchDarkly flag self-host deploys never see.",
+  "services": {
+    "postgres": {
+      "image": "pgvector/pgvector:pg15",
+      "$note": "Upstream compose uses this exact image; the app needs the vector extension so Railway's own postgres template won't do. PGDATA subdir dodges the lost+found initdb refusal (gotchas.md).",
+      "variables": {
+        "POSTGRES_PASSWORD": "${{secret(32)}}",
+        "POSTGRES_DB": "postgres",
+        "PGDATA": "/var/lib/postgresql/data/pgdata"
+      },
+      "volume": { "mountPath": "/var/lib/postgresql/data" },
+      "restartPolicy": "ALWAYS"
+    },
+    "redis": {
+      "image": "redis:7",
+      "$note": "The backend cache client is cluster-only (backend/data/redis_client.py imports RedisCluster exclusively), so a plain redis fails. Single node in cluster mode owning all 16384 slots satisfies it. Upstream treats cache as disposable and explicitly warns persisting nodes.conf pins stale peers, so: no volume, config file in /tmp. announce-hostname uses the private domain so CLUSTER SLOTS hands clients a resolvable name. protected-mode off is safe on the private network and required because cluster clients redirect between announced addresses.",
+      "startCommand": "/bin/sh -c \"redis-server --port 6379 --cluster-enabled yes --cluster-config-file /tmp/nodes.conf --cluster-require-full-coverage no --cluster-announce-hostname $RAILWAY_PRIVATE_DOMAIN --cluster-preferred-endpoint-type hostname --protected-mode no & until redis-cli -p 6379 ping >/dev/null 2>&1; do sleep 1; done; redis-cli -p 6379 cluster addslotsrange 0 16383 || true; wait\"",
+      "restartPolicy": "ALWAYS"
+    },
+    "rabbitmq": {
+      "image": "rabbitmq:4.1.4",
+      "$note": "Version pinned to upstream compose. Backend reads RABBITMQ_DEFAULT_USER/PASS names directly.",
+      "variables": {
+        "RABBITMQ_DEFAULT_USER": "autogpt",
+        "RABBITMQ_DEFAULT_PASS": "${{secret(32)}}"
+      },
+      "volume": { "mountPath": "/var/lib/rabbitmq" },
+      "restartPolicy": "ALWAYS"
+    },
+    "backend": {
+      "image": "ghcr.io/hmseeb/autogpt-railway-backend:autogpt-platform-beta-v0.7.0",
+      "$note": "Overlay image: caddy muxes REST (8006) and websocket (8001) onto one $PORT because a Railway domain targets a single port and the template config rejects targetPort keys (memory: railway-template-config-limits). Boot runs prisma migrate deploy with retry (no init containers on Railway), then execs upstream's `app` monolith. Healthcheck /health is served by the REST app at root, NOT /api/health.",
+      "variables": {
+        "PORT": "8080",
+        "DB_HOST": "${{postgres.RAILWAY_PRIVATE_DOMAIN}}",
+        "DB_PORT": "5432",
+        "DB_USER": "postgres",
+        "DB_PASS": "${{postgres.POSTGRES_PASSWORD}}",
+        "DB_NAME": "postgres",
+        "DATABASE_URL": "postgresql://postgres:${{postgres.POSTGRES_PASSWORD}}@${{postgres.RAILWAY_PRIVATE_DOMAIN}}:5432/postgres?connect_timeout=60&schema=platform",
+        "DIRECT_URL": "postgresql://postgres:${{postgres.POSTGRES_PASSWORD}}@${{postgres.RAILWAY_PRIVATE_DOMAIN}}:5432/postgres?connect_timeout=60&schema=platform",
+        "REDIS_HOST": "${{redis.RAILWAY_PRIVATE_DOMAIN}}",
+        "REDIS_PORT": "6379",
+        "RABBITMQ_HOST": "${{rabbitmq.RAILWAY_PRIVATE_DOMAIN}}",
+        "RABBITMQ_PORT": "5672",
+        "RABBITMQ_DEFAULT_USER": "autogpt",
+        "RABBITMQ_DEFAULT_PASS": "${{rabbitmq.RABBITMQ_DEFAULT_PASS}}",
+        "ENCRYPTION_KEY": "${{secret(64, \"0123456789abcdef\")}}",
+        "UNSUBSCRIBE_SECRET_KEY": "${{secret(64, \"0123456789abcdef\")}}",
+        "JWT_VERIFY_KEY": "${{secret(64)}}",
+        "JWT_JWKS_URL": "http://${{frontend.RAILWAY_PRIVATE_DOMAIN}}:3000/api/auth/jwks",
+        "PLATFORM_BASE_URL": "https://${{RAILWAY_PUBLIC_DOMAIN}}",
+        "FRONTEND_BASE_URL": "https://${{frontend.RAILWAY_PUBLIC_DOMAIN}}",
+        "CLAMAV_SERVICE_ENABLED": "false",
+        "$ENCRYPTION_KEY_note": "hex alphabet because fernet needs base64 which secret() cannot emit; boot script derives the fernet key from the hex (SparkyFitness precedent for the alphabet arg)."
+      },
+      "volume": { "mountPath": "/app/autogpt_platform/backend/workspaces" },
+      "domain": { "targetPortOnSource": 8080 },
+      "healthcheckPath": "/health",
+      "restartPolicy": "ALWAYS"
+    },
+    "frontend": {
+      "image": "ghcr.io/hmseeb/autogpt-railway-frontend:autogpt-platform-beta-v0.7.0",
+      "$note": "Overlay image: sentinel URLs baked into the Next.js client bundle at CI build get sed-rewritten to these runtime values at boot. Better Auth is embedded in this server and talks to postgres directly; its tables live in the platform schema created by backend migrations, so first boot may 500 on auth routes until backend migrations finish - restart policy rides it out.",
+      "variables": {
+        "PORT": "3000",
+        "NEXT_PUBLIC_AGPT_SERVER_URL": "https://${{backend.RAILWAY_PUBLIC_DOMAIN}}/api",
+        "NEXT_PUBLIC_AGPT_WS_SERVER_URL": "wss://${{backend.RAILWAY_PUBLIC_DOMAIN}}/ws",
+        "NEXT_PUBLIC_FRONTEND_BASE_URL": "https://${{RAILWAY_PUBLIC_DOMAIN}}",
+        "AGPT_SERVER_URL": "https://${{backend.RAILWAY_PUBLIC_DOMAIN}}/api",
+        "AGPT_WS_SERVER_URL": "wss://${{backend.RAILWAY_PUBLIC_DOMAIN}}/ws",
+        "BETTER_AUTH_SECRET": "${{secret(64)}}",
+        "BETTER_AUTH_URL": "https://${{RAILWAY_PUBLIC_DOMAIN}}",
+        "DATABASE_URL": "postgresql://postgres:${{postgres.POSTGRES_PASSWORD}}@${{postgres.RAILWAY_PRIVATE_DOMAIN}}:5432/postgres",
+        "AUTH_DB_SCHEMA": "platform",
+        "AUTH_REQUIRE_EMAIL_VERIFICATION": "false",
+        "$AGPT_SERVER_URL_note": "server-side reads go over the public URL rather than private :8006 because the REST bind interface on v6 private is unverified; revisit if egress cost matters."
+      },
+      "domain": { "targetPortOnSource": 3000 },
+      "healthcheckPath": "/",
+      "restartPolicy": "ALWAYS"
+    }
+  },
+  "$deployer_prompts": "None required. LLM provider keys are added inside the app per-user (Settings > Credentials), so the template deploys with zero prompts.",
+  "$source_project_note": "In the LIVE source project, cross-service RAILWAY_PUBLIC_DOMAIN references resolve EMPTY (memory: railway-cross-service-public-domain); set those five URL vars as literals there and only use the reference form in the repaired template config."
+}

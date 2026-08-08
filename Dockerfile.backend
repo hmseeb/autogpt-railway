@@ -1,0 +1,25 @@
+# Railway overlay on the upstream backend image.
+# BASE_IMAGE is the upstream `server` target built from the pinned tag;
+# the CI workflow builds that first and passes it in.
+#
+# Adds:
+#  - caddy, to mux the REST API (8006) and the websocket server (8001)
+#    onto the single $PORT Railway exposes per domain
+#  - a boot script that derives fernet keys from hex secrets (Railway's
+#    ${{secret()}} cannot emit base64), runs prisma migrations, then
+#    execs the upstream `app` monolith entrypoint
+ARG BASE_IMAGE
+FROM caddy:2-alpine AS caddy
+FROM ${BASE_IMAGE}
+
+COPY --from=caddy /usr/bin/caddy /usr/bin/caddy
+RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
+
+COPY boot/Caddyfile /etc/caddy/Caddyfile
+COPY boot/backend-boot.sh /usr/local/bin/backend-boot.sh
+RUN chmod +x /usr/local/bin/backend-boot.sh
+
+ENV PORT=8080
+EXPOSE 8080
+
+CMD ["/usr/local/bin/backend-boot.sh"]
