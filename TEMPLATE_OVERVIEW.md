@@ -18,7 +18,7 @@ Hosting AutoGPT Platform means running five coordinated pieces: a Next.js fronte
 
 - One credential at deploy time to power the chat assistant, whichever suits you: an OpenRouter API key (which also powers marketplace search), an Anthropic API key, a token from your own Claude Pro or Max subscription, or the address and key of any OpenAI compatible endpoint you already run. Fill in one and the matching mode turns itself on. Leave them all blank and everything still deploys; the chat then replies with an error naming the setting it wants, and you can add it later.
 - An LLM provider API key per user, added inside the app after signup, for the blocks your agents are built from
-- Optional: OAuth client credentials for any integration you want to connect by sign in rather than by API key (GitHub, Google, Notion, Reddit, Discord, Twitter or X, Linear, Todoist). You register an app with that provider, point its callback at your own deployed address, and add the id and secret pair to the backend service. Integrations that take a plain API key need none of this and work as soon as a user pastes their key in the app. The readme lists the variable names and the callback URL.
+- Optional: OAuth client credentials for any integration you want to connect by sign in rather than by API key (GitHub, Google, Notion, Reddit, Discord, Twitter or X, Linear, Todoist, Airtable, WordPress). You register an app with that provider, point its callback at your own deployed address, and add the id and secret pair to the backend service. Integrations that take a plain API key need none of this and work as soon as a user pastes their key in the app. The readme lists the variable names and the callback URL.
 
 ### Implementation Details
 

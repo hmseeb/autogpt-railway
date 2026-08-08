@@ -63,6 +63,8 @@ To enable one:
    `https://<your-frontend-domain>/auth/integrations/oauth_callback`
 3. Add the pair to the `backend` service and redeploy
 
+Every OAuth provider in `autogpt-platform-beta-v0.7.0`:
+
 | Provider | Variables |
 |---|---|
 | GitHub | `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET` |
@@ -73,8 +75,17 @@ To enable one:
 | Twitter / X | `TWITTER_CLIENT_ID`, `TWITTER_CLIENT_SECRET` |
 | Linear | `LINEAR_CLIENT_ID`, `LINEAR_CLIENT_SECRET` |
 | Todoist | `TODOIST_CLIENT_ID`, `TODOIST_CLIENT_SECRET` |
+| Airtable | `AIRTABLE_CLIENT_ID`, `AIRTABLE_CLIENT_SECRET` |
+| WordPress | `WORDPRESS_CLIENT_ID`, `WORDPRESS_CLIENT_SECRET` |
 
 Add only the ones you actually want. Each is independent, and the rest keep working as before. The backend logs a line at startup for any provider that implements OAuth without both variables set, which is a quick way to see what is currently missing.
+
+If a later upstream release adds a provider not listed here, the naming rule is `<PROVIDER>_CLIENT_ID` and `<PROVIDER>_CLIENT_SECRET`, which is what upstream's own registration helper defaults to.
+
+Two things this section does not cover, because neither uses deployment variables:
+
+- **MCP servers** authenticate per server, set up inside the app rather than here
+- **Key-based integrations** need nothing from you at all; the user pastes their own key when a block asks for it
 
 ## Using your own domain
 
