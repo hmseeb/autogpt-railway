@@ -43,13 +43,9 @@ jobs:
           cache-from: type=gha,scope=backend
           cache-to: type=gha,scope=backend,mode=max
       - name: Build Railway overlay
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: Dockerfile.backend
-          build-args: BASE_IMAGE=agpt-backend-base:ci
-          load: true
-          tags: autogpt-railway-backend:test
+        # plain docker build: shares the daemon image store, so it can see
+        # the loaded base image (buildx container builders cannot)
+        run: docker build -f Dockerfile.backend --build-arg BASE_IMAGE=agpt-backend-base:ci -t autogpt-railway-backend:test .
       - name: Contract test
         run: BACKEND_IMAGE=autogpt-railway-backend:test ./test/backend.sh
       - name: Push
@@ -100,13 +96,7 @@ jobs:
           cache-from: type=gha,scope=frontend
           cache-to: type=gha,scope=frontend,mode=max
       - name: Build Railway overlay
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: Dockerfile.frontend
-          build-args: BASE_IMAGE=agpt-frontend-base:ci
-          load: true
-          tags: autogpt-railway-frontend:test
+        run: docker build -f Dockerfile.frontend --build-arg BASE_IMAGE=agpt-frontend-base:ci -t autogpt-railway-frontend:test .
       - name: Contract test
         run: FRONTEND_IMAGE=autogpt-railway-frontend:test ./test/frontend.sh
       - name: Push
