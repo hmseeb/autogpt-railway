@@ -2,7 +2,7 @@
   "$name": "AutoGPT Platform",
   "$upstream": "Significant-Gravitas/AutoGPT @ autogpt-platform-beta-v0.7.0 (2026-08-05)",
   "$license_note": "autogpt_platform/ is PolyForm Shield. Railway staff ruling 2026-08-08: fine to template while a self-hosted option exists; an owner takedown request unpublishes the template, no account strike. Business risk accepted.",
-  "$topology_note": "5 services instead of upstream's 16. All ten backend processes run in one container via upstream's own `app` poetry script (backend/backend/app.py main()); every *_HOST defaults to localhost so colocation is zero-config, and the workspace volume (which multiple backend processes write) cannot be shared across Railway services anyway. clamav is skipped via CLAMAV_SERVICE_ENABLED=false (official flag, default true). falkordb/graphiti is skipped: rollout is gated on a LaunchDarkly flag self-host deploys never see.",
+  "$topology_note": "5 services instead of upstream's 16. All ten backend processes run in one container as the same 8 per-service commands upstream compose runs, launched by boot/backend-boot.sh in one container (the `app` monolith deadlocks on Linux: fork-with-threads); every *_HOST defaults to localhost so colocation is zero-config, and the workspace volume (which multiple backend processes write) cannot be shared across Railway services anyway. clamav is skipped via CLAMAV_SERVICE_ENABLED=false (official flag, default true). falkordb/graphiti is skipped: rollout is gated on a LaunchDarkly flag self-host deploys never see.",
   "services": {
     "postgres": {
       "image": "pgvector/pgvector:pg15",
@@ -33,7 +33,7 @@
     },
     "backend": {
       "image": "ghcr.io/hmseeb/autogpt-railway-backend:autogpt-platform-beta-v0.7.0",
-      "$note": "Overlay image: caddy muxes REST (8006) and websocket (8001) onto one $PORT because a Railway domain targets a single port and the template config rejects targetPort keys (memory: railway-template-config-limits). Boot runs prisma migrate deploy with retry (no init containers on Railway), then execs upstream's `app` monolith. Healthcheck /health is served by the REST app at root, NOT /api/health.",
+      "$note": "Overlay image: caddy muxes REST (8006) and websocket (8001) onto one $PORT because a Railway domain targets a single port and the template config rejects targetPort keys (memory: railway-template-config-limits). Boot runs prisma migrate deploy with retry (no init containers on Railway), then launches the 8 upstream service commands under a shell supervisor. Healthcheck /health is served by the REST app at root, NOT /api/health.",
       "variables": {
         "PORT": "8080",
         "DB_HOST": "${{postgres.RAILWAY_PRIVATE_DOMAIN}}",
