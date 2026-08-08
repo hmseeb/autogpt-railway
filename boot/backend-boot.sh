@@ -23,6 +23,44 @@ if echo "$UNSUBSCRIBE_SECRET_KEY" | grep -qE '^[0-9a-fA-F]{64}$'; then
   UNSUBSCRIBE_SECRET_KEY=$(derive_fernet "$UNSUBSCRIBE_SECRET_KEY"); export UNSUBSCRIBE_SECRET_KEY
 fi
 
+# Provider routing. The deployer pastes ONE credential and the matching mode
+# switch is derived here, rather than being a second field they must remember.
+# A Railway template form cannot express "and also set this other flag", so the
+# alternative was a hidden switch defaulting to off, which silently ignored a
+# pasted Claude token: worse than having no field at all.
+#
+# Precedence mirrors upstream's own effective_transport (config.py): local,
+# then subscription, then openrouter, then direct anthropic. An explicitly set
+# switch always wins over the derived one, so any non-default combination is
+# still reachable by setting both by hand.
+if [ -n "${OPEN_ROUTER_API_KEY:-}${ANTHROPIC_API_KEY:-}${CLAUDE_CODE_OAUTH_TOKEN:-}${CHAT_BASE_URL:-}${CHAT_API_KEY:-}" ]; then
+  if [ -n "${CHAT_BASE_URL:-}" ] && [ -z "${CHAT_USE_LOCAL:-}" ]; then
+    export CHAT_USE_LOCAL=true
+    echo "provider: custom OpenAI-compatible endpoint (${CHAT_BASE_URL})"
+  elif [ -n "${CLAUDE_CODE_OAUTH_TOKEN:-}" ] && [ -z "${CHAT_USE_CLAUDE_CODE_SUBSCRIPTION:-}" ]; then
+    export CHAT_USE_CLAUDE_CODE_SUBSCRIPTION=true
+    echo "provider: Claude subscription (setup-token)"
+  elif [ -n "${OPEN_ROUTER_API_KEY:-}" ] && [ -z "${CHAT_USE_CLAUDE_CODE_SUBSCRIPTION:-}" ]; then
+    echo "provider: OpenRouter"
+  elif [ -n "${ANTHROPIC_API_KEY:-}" ] && [ -z "${CHAT_USE_OPENROUTER:-}" ]; then
+    export CHAT_USE_OPENROUTER=false
+    echo "provider: Anthropic direct"
+  else
+    echo "provider: using the CHAT_USE_* switches set on this service"
+  fi
+else
+  echo "=============================================================="
+  echo "NO CHAT PROVIDER CONFIGURED. The platform will start and agents"
+  echo "you build will run, but the built-in chat assistant will answer"
+  echo "every message with an error until you set ONE of these on this"
+  echo "service and redeploy:"
+  echo "  OPEN_ROUTER_API_KEY       openrouter.ai/keys (also powers search)"
+  echo "  ANTHROPIC_API_KEY         console.anthropic.com"
+  echo "  CLAUDE_CODE_OAUTH_TOKEN   run: claude setup-token"
+  echo "  CHAT_BASE_URL + CHAT_API_KEY   your own OpenAI-compatible endpoint"
+  echo "=============================================================="
+fi
+
 # Prisma migrations. The server image ships the prisma CLI in its venv.
 # Retry: on a fresh template deploy postgres may still be initializing.
 cd /app/autogpt_platform/backend

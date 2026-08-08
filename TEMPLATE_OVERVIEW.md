@@ -16,7 +16,7 @@ Hosting AutoGPT Platform means running five coordinated pieces: a Next.js fronte
 
 ### Deployment Dependencies
 
-- Optional at deploy time: an OpenRouter API key to power the chat assistant and marketplace search. Anthropic, a Claude Pro or Max subscription token, or a self hosted OpenAI compatible endpoint work instead. Leave it blank and everything still deploys; the chat then replies with an error naming the setting it wants, and you can add it later.
+- One credential at deploy time to power the chat assistant, whichever suits you: an OpenRouter API key (which also powers marketplace search), an Anthropic API key, a token from your own Claude Pro or Max subscription, or the address and key of any OpenAI compatible endpoint you already run. Fill in one and the matching mode turns itself on. Leave them all blank and everything still deploys; the chat then replies with an error naming the setting it wants, and you can add it later.
 - An LLM provider API key per user, added inside the app after signup, for the blocks your agents are built from
 - Optional: OAuth client credentials for integrations you want agents to use (GitHub, Google, Notion, and others)
 

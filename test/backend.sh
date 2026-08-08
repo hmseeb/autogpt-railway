@@ -6,6 +6,15 @@
 #   3. the websocket path /ws upgrades on the same muxed $PORT
 #   4. the muxed port answers over IPv6 (Railway healthchecks + private net)
 #   5. a hex ENCRYPTION_KEY is accepted (boot derives the fernet key)
+#   6. BACKEND_CORS_ALLOW_ORIGINS is honored: the configured frontend origin
+#      passes preflight and an unlisted one does not
+#
+# Test 6 exists because shipping without that variable broke the copilot chat on
+# every deploy while leaving the healthcheck green: the chat is the only surface
+# that calls the backend directly from the browser, so its preflight 400'd and
+# the user saw "Connection lost" with nothing in the logs. If a future upstream
+# release renames or drops the setting, the accepted-origin assertion fails here
+# instead of in production.
 set -euo pipefail
 
 IMG="${BACKEND_IMAGE:-autogpt-railway-backend:test}"
@@ -54,6 +63,7 @@ docker run -d --name $BE --network $NET \
   -e JWT_VERIFY_KEY="test-jwt-verify-key-at-least-32-characters-long" \
   -e JWT_JWKS_URL="https://frontend-not-running-in-this-test.invalid/api/auth/jwks" \
   -e CLAMAV_SERVICE_ENABLED=false \
+  -e BACKEND_CORS_ALLOW_ORIGINS='["https://frontend-under-test.invalid"]' \
   "$IMG" >/dev/null
 
 echo "waiting for backend on muxed port..."
@@ -81,5 +91,21 @@ echo "PASS: /ws reaches the websocket server (HTTP $WS)"
 V6=$(docker exec $BE /bin/sh -c "command -v curl >/dev/null && curl -s -o /dev/null -w '%{http_code}' 'http://[::1]:8080/health' || echo curl-missing")
 [ "$V6" = "200" ] || { echo "FAIL: IPv6 loopback gave $V6"; exit 1; }
 echo "PASS: muxed port answers over IPv6"
+
+# CORS allowlist. The middleware answers preflight before routing, so the path
+# only has to exist as far as the muxer; /health is the stable one.
+preflight() {
+  docker run --rm --network $NET curlimages/curl:8.10.1 -s -o /dev/null -w '%{http_code}' \
+    -X OPTIONS -H "Origin: $1" -H "Access-Control-Request-Method: POST" \
+    -H "Access-Control-Request-Headers: content-type,authorization" \
+    "http://$BE:8080/health"
+}
+ALLOWED=$(preflight "https://frontend-under-test.invalid")
+[ "$ALLOWED" = "200" ] || { echo "FAIL: configured origin got $ALLOWED, expected 200 - BACKEND_CORS_ALLOW_ORIGINS not honored"; exit 1; }
+echo "PASS: configured frontend origin passes preflight"
+
+DENIED=$(preflight "https://not-the-frontend.invalid")
+[ "$DENIED" != "200" ] || { echo "FAIL: unlisted origin passed preflight, allowlist is not being enforced"; exit 1; }
+echo "PASS: unlisted origin rejected (HTTP $DENIED)"
 
 echo "ALL BACKEND CONTRACT TESTS PASS"
