@@ -52,7 +52,7 @@ docker run -d --name $BE --network $NET \
   -e ENCRYPTION_KEY="$HEXKEY" \
   -e UNSUBSCRIBE_SECRET_KEY="$HEXKEY" \
   -e JWT_VERIFY_KEY="test-jwt-verify-key-at-least-32-characters-long" \
-  -e JWT_JWKS_URL="" \
+  -e JWT_JWKS_URL="https://frontend-not-running-in-this-test.invalid/api/auth/jwks" \
   -e CLAMAV_SERVICE_ENABLED=false \
   "$IMG" >/dev/null
 
