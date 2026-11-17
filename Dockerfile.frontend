@@ -9,6 +9,8 @@ FROM ${BASE_IMAGE}
 
 USER root
 COPY boot/frontend-boot.sh /usr/local/bin/frontend-boot.sh
+# latest-migration is written by CI from the pinned upstream checkout
+COPY boot/wait-auth-db.mjs boot/latest-migration /opt/railway/
 RUN chmod +x /usr/local/bin/frontend-boot.sh && chown -R nextjs:nodejs /app
 USER nextjs
 

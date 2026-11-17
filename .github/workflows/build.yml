@@ -101,6 +101,11 @@ jobs:
           tags: agpt-frontend-base:ci
           cache-from: type=gha,scope=frontend
           cache-to: type=gha,scope=frontend,mode=max
+      - name: Record the newest upstream migration
+        # the frontend boot waits for it before serving (boot/wait-auth-db.mjs)
+        run: |
+          ls upstream/autogpt_platform/backend/migrations | grep -v '\.toml$' | sort | tail -1 > boot/latest-migration
+          cat boot/latest-migration
       - name: Build Railway overlay
         run: docker build -f Dockerfile.frontend --build-arg BASE_IMAGE=agpt-frontend-base:ci -t autogpt-railway-frontend:test .
       - name: Contract test

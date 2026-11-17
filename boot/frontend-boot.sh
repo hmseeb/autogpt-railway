@@ -24,4 +24,20 @@ grep -rl "railway-template.invalid" . 2>/dev/null | while read -r f; do
     "$f"
 done
 
-exec node server.js
+# Better Auth caches a schema mismatch for the life of the process, so do not
+# serve before the backend has migrated (see wait-auth-db.mjs). Bounded to stay
+# inside Railway's healthcheck window; if the backend is slower than that,
+# serve anyway and restart once the migrations land, so the cache is rebuilt.
+if node /opt/railway/wait-auth-db.mjs "${AUTH_DB_WAIT_SECONDS:-240}"; then
+  exec node server.js
+fi
+echo "auth db: migrations still pending; serving now and restarting once they land" >&2
+node server.js &
+server=$!
+if node /opt/railway/wait-auth-db.mjs 86400; then
+  echo "auth db: migrations landed; restarting so Better Auth re-checks its schema" >&2
+  kill "$server" 2>/dev/null || true
+  wait "$server" 2>/dev/null || true
+  exit 1
+fi
+wait "$server"
