@@ -253,7 +253,7 @@
     },
     "ANTHROPIC_API_KEY": {
      "isOptional": true,
-     "description": "Optional. Use Anthropic to write the replies instead of OpenRouter. Covers the conversation only, so pair it with an OpenRouter key above if you also want web search.",
+     "description": "Optional. For Anthropic agent blocks. Does not power the copilot chat, which needs OPEN_ROUTER_API_KEY or CHAT_API_KEY.",
      "defaultValue": ""
     },
     "FRONTEND_BASE_URL": {
