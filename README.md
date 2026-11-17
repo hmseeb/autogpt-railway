@@ -12,7 +12,7 @@ Click to deploy AutoGPT Platform (the agent builder, not the retired 2023 script
 | redis | redis:7, single node cluster mode | no, cache only |
 | rabbitmq | rabbitmq:4.1.4 | volume |
 
-The two ghcr images are thin overlays on the pinned upstream release `autogpt-platform-beta-v0.7.0`, built by CI in this repo. See `Dockerfile.backend`, `Dockerfile.frontend`, and `boot/` for exactly what they add. `template.json` is the full build sheet with rationale per choice.
+The two ghcr images are thin overlays on the pinned upstream release `autogpt-platform-beta-v0.11.3`, built by CI in this repo. See `Dockerfile.backend`, `Dockerfile.frontend`, and `boot/` for exactly what they add. `template.json` is the full build sheet with rationale per choice.
 
 ## First run
 
@@ -72,7 +72,7 @@ To enable one:
    `https://<your-frontend-domain>/auth/integrations/oauth_callback`
 3. Add the pair to the `backend` service and redeploy
 
-Every OAuth provider in `autogpt-platform-beta-v0.7.0`:
+Every OAuth provider in `autogpt-platform-beta-v0.11.3`:
 
 | Provider | Variables |
 |---|---|
@@ -86,6 +86,8 @@ Every OAuth provider in `autogpt-platform-beta-v0.7.0`:
 | Todoist | `TODOIST_CLIENT_ID`, `TODOIST_CLIENT_SECRET` |
 | Airtable | `AIRTABLE_CLIENT_ID`, `AIRTABLE_CLIENT_SECRET` |
 | WordPress | `WORDPRESS_CLIENT_ID`, `WORDPRESS_CLIENT_SECRET` |
+| HubSpot | `HUBSPOT_CLIENT_ID`, `HUBSPOT_CLIENT_SECRET` |
+| Microsoft | `MICROSOFT_CLIENT_ID`, `MICROSOFT_CLIENT_SECRET` (optional `MICROSOFT_TENANT_ID`) |
 
 Add only the ones you actually want. Each is independent, and the rest keep working as before. The backend logs a line at startup for any provider that implements OAuth without both variables set, which is a quick way to see what is currently missing.
 

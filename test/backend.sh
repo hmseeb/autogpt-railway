@@ -108,4 +108,22 @@ DENIED=$(preflight "https://not-the-frontend.invalid")
 [ "$DENIED" != "200" ] || { echo "FAIL: unlisted origin passed preflight, allowlist is not being enforced"; exit 1; }
 echo "PASS: unlisted origin rejected (HTTP $DENIED)"
 
+# Skills catalog (upstream >= 0.10): compose runs publish-skills-catalog as a
+# one-shot after migrate, or the marketplace skills and expert roster stay
+# empty. Boot runs it in the background, best effort. It must (a) actually run
+# and (b) not take the container down when it exits, which a bare `wait -n`
+# over every background job would do.
+pub=""
+for i in $(seq 1 150); do
+  pub=$(docker logs $BE 2>&1 | grep -oE 'skills catalog (published|publish failed)' | head -1 || true)
+  [ -n "$pub" ] && break
+  sleep 2
+done
+[ -n "$pub" ] || { echo "FAIL: boot never ran publish-skills-catalog"; docker logs $BE 2>&1 | tail -60; exit 1; }
+sleep 10
+[ "$(docker inspect -f '{{.State.Running}}' $BE)" = "true" ] || { echo "FAIL: container exited after the skills publish finished"; docker logs $BE 2>&1 | tail -60; exit 1; }
+docker run --rm --network $NET curlimages/curl:8.10.1 -fsS -o /dev/null "http://$BE:8080/health" \
+  || { echo "FAIL: REST API gone after the skills publish finished"; exit 1; }
+echo "PASS: boot ran the skills catalog publish ($pub) and the backend kept running"
+
 echo "ALL BACKEND CONTRACT TESTS PASS"

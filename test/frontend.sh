@@ -46,6 +46,13 @@ HIT=$(docker exec $FE /bin/sh -c "grep -rl 'backend.example.test/api' .next/stat
 [ -n "$HIT" ] || { echo "FAIL: runtime backend URL not found in client bundle"; exit 1; }
 echo "PASS: runtime backend URL present in client bundle"
 
+# Upstream >= 0.9 declares NEXT_PUBLIC_FRONTEND_BASE_URL as a build ARG; if the
+# build ever inlines it as empty instead of our sentinel, auth redirects and
+# share links point nowhere while the page itself still loads.
+HIT=$(docker exec $FE /bin/sh -c "grep -rl 'https://frontend.example.test' .next 2>/dev/null | head -1" || true)
+[ -n "$HIT" ] || { echo "FAIL: runtime frontend base URL not found in the build"; exit 1; }
+echo "PASS: runtime frontend base URL present in the build"
+
 V6=$(docker exec $FE /bin/sh -c "wget -q -O /dev/null 'http://[::1]:3000/' && echo ok || echo fail")
 [ "$V6" = "ok" ] || { echo "FAIL: IPv6 loopback: $V6"; exit 1; }
 echo "PASS: frontend answers over IPv6"

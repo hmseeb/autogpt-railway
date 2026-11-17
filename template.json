@@ -1,6 +1,6 @@
 {
   "$name": "AutoGPT Platform",
-  "$upstream": "Significant-Gravitas/AutoGPT @ autogpt-platform-beta-v0.7.0 (2026-08-05)",
+  "$upstream": "Significant-Gravitas/AutoGPT @ autogpt-platform-beta-v0.11.3 (2026-11-15)",
   "$license_note": "autogpt_platform/ is PolyForm Shield. Railway staff ruling 2026-08-08: fine to template while a self-hosted option exists; an owner takedown request unpublishes the template, no account strike. Business risk accepted.",
   "$topology_note": "5 services instead of upstream's 16. All ten backend processes run in one container as the same 8 per-service commands upstream compose runs, launched by boot/backend-boot.sh in one container (the `app` monolith deadlocks on Linux: fork-with-threads); every *_HOST defaults to localhost so colocation is zero-config, and the workspace volume (which multiple backend processes write) cannot be shared across Railway services anyway. clamav is skipped via CLAMAV_SERVICE_ENABLED=false (official flag, default true). falkordb/graphiti is skipped: rollout is gated on a LaunchDarkly flag self-host deploys never see.",
   "services": {
@@ -36,7 +36,7 @@
       "restartPolicy": "ALWAYS"
     },
     "backend": {
-      "image": "ghcr.io/hmseeb/autogpt-railway-backend:autogpt-platform-beta-v0.7.0",
+      "image": "ghcr.io/hmseeb/autogpt-railway-backend:autogpt-platform-beta-v0.11.3",
       "$note": "Overlay image: caddy muxes REST (8006) and websocket (8001) onto one $PORT because a Railway domain targets a single port and the template config rejects targetPort keys (memory: railway-template-config-limits). Boot runs prisma migrate deploy with retry (no init containers on Railway), then launches the 8 upstream service commands under a shell supervisor. Healthcheck /health is served by the REST app at root, NOT /api/health.",
       "variables": {
         "PORT": "8080",
@@ -81,7 +81,7 @@
       "restartPolicy": "ALWAYS"
     },
     "frontend": {
-      "image": "ghcr.io/hmseeb/autogpt-railway-frontend:autogpt-platform-beta-v0.7.0",
+      "image": "ghcr.io/hmseeb/autogpt-railway-frontend:autogpt-platform-beta-v0.11.3",
       "$note": "Overlay image: sentinel URLs baked into the Next.js client bundle at CI build get sed-rewritten to these runtime values at boot. Better Auth is embedded in this server and talks to postgres directly; its tables live in the platform schema created by backend migrations, so first boot may 500 on auth routes until backend migrations finish - restart policy rides it out.",
       "variables": {
         "PORT": "3000",
@@ -112,6 +112,6 @@
     "url": "https://railway.com/deploy/autogpt-platform",
     "sourceProjectId": "7b44aad8-d23a-4d95-b744-ef9cbff695dd",
     "publishedAt": "2026-08-08",
-    "images": "ghcr.io/hmseeb/autogpt-railway-{backend,frontend}:autogpt-platform-beta-v0.7.0"
+    "images": "ghcr.io/hmseeb/autogpt-railway-{backend,frontend}:autogpt-platform-beta-v0.11.3"
   }
 }

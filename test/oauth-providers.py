@@ -34,9 +34,13 @@ def find_providers(upstream: pathlib.Path) -> dict[str, str]:
 
     # Path 1: handler modules under integrations/oauth/. These read their
     # credentials through the Secrets model, whose env var is the field name
-    # uppercased, i.e. <PROVIDER>_CLIENT_ID.
+    # uppercased, i.e. <PROVIDER>_CLIENT_ID. Only modules defining a
+    # BaseOAuthHandler subclass count: the directory also holds device-flow
+    # handlers that ship a public client id, and shared helpers.
     for path in (backend / "integrations" / "oauth").glob("*.py"):
         if path.stem in SKIP or path.stem.endswith("_test"):
+            continue
+        if not re.search(r"^class \w+\(BaseOAuthHandler\)", path.read_text(), re.M):
             continue
         providers[path.stem] = f"{path.stem.upper()}_CLIENT_ID"
 
