@@ -91,17 +91,32 @@ done
 
 caddy start --config /etc/caddy/Caddyfile
 
+# Marketplace skills + expert roster. Upstream compose runs this as a one-shot
+# right after migrate, with nothing waiting on it; idempotent, best effort
+# (it reads the public catalog from GitHub). Kept OUT of the pid list below,
+# so its normal exit does not take the long-running services down.
+if [ "${AUTOGPT_PUBLISH_SKILLS:-1}" = "1" ]; then
+  (
+    if timeout 600 publish-skills-catalog --skip-missing-preloads; then
+      echo "skills catalog published"
+    else
+      echo "WARNING: skills catalog publish failed (see above); continuing without it" >&2
+    fi
+  ) &
+fi
+
 # Same processes upstream's production compose runs, one per line.
 # db (DatabaseManager) first: the others RPC through it.
 # If any process dies the container exits and Railway (ALWAYS) restarts it.
-db & sleep 3
-executor &
-copilot-executor &
-ws &
-scheduler &
-notification &
-platform-linking-manager &
-rest &
-wait -n
+pids=()
+db & pids+=($!); sleep 3
+executor & pids+=($!)
+copilot-executor & pids+=($!)
+ws & pids+=($!)
+scheduler & pids+=($!)
+notification & pids+=($!)
+platform-linking-manager & pids+=($!)
+rest & pids+=($!)
+wait -n "${pids[@]}"
 echo "a backend process exited; restarting container" >&2
 exit 1
