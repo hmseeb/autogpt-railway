@@ -37,13 +37,14 @@ The other three routes choose which model *writes the replies*. They do not prov
 | Route | Set on `backend` | Covers |
 |---|---|---|
 | OpenRouter | `OPEN_ROUTER_API_KEY` | chat, web search, marketplace search |
-| Anthropic direct | `ANTHROPIC_API_KEY` | chat only |
 | Your own Claude Pro/Max subscription | `CLAUDE_CODE_OAUTH_TOKEN`, from `claude setup-token` | chat only |
 | Your own OpenAI-compatible endpoint | `CHAT_BASE_URL` and `CHAT_API_KEY` | chat only |
 
-**These combine.** Want Claude answering your messages but working search? Set `CLAUDE_CODE_OAUTH_TOKEN` *and* `OPEN_ROUTER_API_KEY`. The boot script routes the chat to your subscription and search to OpenRouter, and prints which it picked. The same applies to the Anthropic route.
+**These combine.** Want Claude answering your messages but working search? Set `CLAUDE_CODE_OAUTH_TOKEN` *and* `OPEN_ROUTER_API_KEY`. The boot script routes the chat to your subscription and search to OpenRouter, and prints which it picked.
 
 The boot script turns on the matching mode for whichever credential you filled, so there is no second flag to remember. Setting a mode switch by hand (`CHAT_USE_OPENROUTER`, `CHAT_USE_CLAUDE_CODE_SUBSCRIPTION`, `CHAT_USE_LOCAL`) always overrides what it picked.
+
+An Anthropic key does not power the chat: with only `ANTHROPIC_API_KEY` set, upstream refuses every message with "No API key configured" (its check wants `OPEN_ROUTER_API_KEY` or `CHAT_API_KEY`). Put an Anthropic key in the app under Settings > Credentials instead, where agent blocks such as AI Text Generator use it.
 
 With nothing set the platform still deploys and agents you build still run; only the chat is affected, and it replies with an error naming what it wants. The deploy logs list the options too.
 
